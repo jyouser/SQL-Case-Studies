@@ -45,4 +45,21 @@ To remain relevant, the company must:
 | `customer` | Customer profiles |
 | `payment` | Rental payment records |
 
----
+
+🛠️ Tools & Technologies
+
+SQL — For data querying and analysis
+
+MySQL / PostgreSQL — Database system
+
+👨‍💻 Author
+
+Your Name
+📧 [jyothsasing@gmail.com]
+🔗 [LinkedIn / Portfolio Link]
+
+🏁 Conclusion
+
+By leveraging data-driven insights, CineFlix can improve customer satisfaction, optimize inventory, and maintain its competitive edge against streaming platforms while preserving the charm of physical entertainment experiences.
+
+⭐ If you found this project helpful, please star the repo!
