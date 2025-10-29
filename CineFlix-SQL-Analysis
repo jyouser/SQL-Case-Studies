@@ -1,0 +1,150 @@
+/* ===========================================================
+   CINEFLIX DATA ANALYSIS PROJECT
+   Author: [Your Name]
+   Description: SQL queries to analyze movie rentals, 
+                customer behavior, genre trends, and pricing.
+   =========================================================== */
+
+
+/* -----------------------------------------------------------
+   QUESTION 1:
+   What is the most popular movie genre by the total number of rentals?
+   ----------------------------------------------------------- */
+
+-- ✅ Approach:
+-- Join 5 tables: category → film_category → film → inventory → rental
+-- Use INNER JOIN since question doesn’t include “all” or “every”.
+-- Find the genre with the highest number of rentals.
+
+SELECT 
+    c.name AS genre,
+    COUNT(r.rental_id) AS no_of_rentals
+FROM cineflix.category c
+INNER JOIN cineflix.film_category fc ON c.category_id = fc.category_id
+INNER JOIN cineflix.film f ON fc.film_id = f.film_id
+INNER JOIN cineflix.inventory i ON f.film_id = i.film_id
+INNER JOIN cineflix.rental r ON i.inventory_id = r.inventory_id
+GROUP BY c.name
+ORDER BY no_of_rentals DESC
+LIMIT 1; -- Most popular genre
+
+
+-- 🧩 Additional Info: Include category_id
+SELECT 
+    c.category_id,
+    c.name AS genre,
+    COUNT(r.rental_id) AS no_of_rentals
+FROM cineflix.category c
+INNER JOIN cineflix.film_category fc ON c.category_id = fc.category_id
+INNER JOIN cineflix.film f ON fc.film_id = f.film_id
+INNER JOIN cineflix.inventory i ON f.film_id = i.film_id
+INNER JOIN cineflix.rental r ON i.inventory_id = r.inventory_id
+GROUP BY c.category_id, c.name
+ORDER BY no_of_rentals DESC;
+
+
+
+/* -----------------------------------------------------------
+   QUESTION 2:
+   Get a list of all customers who have rented more films than
+   the average number of rentals.
+   ----------------------------------------------------------- */
+
+SELECT 
+    customer_id,
+    COUNT(rental_id) AS cnt_rentals
+FROM cineflix.rental
+GROUP BY customer_id
+HAVING cnt_rentals > (
+    SELECT ROUND(AVG(cnt_rentals), 2)
+    FROM (
+        SELECT customer_id, COUNT(rental_id) AS cnt_rentals
+        FROM cineflix.rental
+        GROUP BY customer_id
+    ) AS avg_tbl
+);
+
+
+
+/* -----------------------------------------------------------
+   QUESTION 3:
+   List all customers and the total amount they have spent on rentals,
+   including those who have never rented a film.
+   ----------------------------------------------------------- */
+
+SELECT 
+    c.customer_id,
+    IFNULL(ROUND(SUM(p.amount), 2), 0) AS total_amount
+FROM cineflix.customer c
+LEFT JOIN cineflix.payment p ON c.customer_id = p.customer_id
+GROUP BY c.customer_id
+ORDER BY total_amount DESC;
+
+
+
+/* -----------------------------------------------------------
+   QUESTION 4:
+   List all film categories along with the number of films in each,
+   including categories with no films.
+   ----------------------------------------------------------- */
+
+SELECT 
+    c.category_id,
+    c.name AS category_name,
+    IFNULL(t.cnt_films, 0) AS total_films
+FROM cineflix.category c
+LEFT JOIN (
+    SELECT 
+        fc.category_id,
+        COUNT(fc.film_id) AS cnt_films
+    FROM cineflix.film_category fc
+    GROUP BY fc.category_id
+) AS t
+ON c.category_id = t.category_id
+ORDER BY total_films DESC;
+
+
+
+/* -----------------------------------------------------------
+   QUESTION 5:
+   List all films with rental rates higher than the average rental rate.
+   ----------------------------------------------------------- */
+
+-- ✅ Approach 1: Simple subquery filter
+SELECT 
+    film_id,
+    title,
+    rental_rate
+FROM cineflix.film
+WHERE rental_rate > (
+    SELECT ROUND(AVG(rental_rate), 2)
+    FROM cineflix.film
+);
+
+-- ✅ Approach 2: Join with average rate to show reference value
+SELECT 
+    f.film_id,
+    f.title,
+    f.rental_rate,
+    t.avg_rental_rate
+FROM cineflix.film f
+LEFT JOIN (
+    SELECT ROUND(AVG(rental_rate), 2) AS avg_rental_rate
+    FROM cineflix.film
+) AS t
+ON f.rental_rate > t.avg_rental_rate
+ORDER BY f.rental_rate DESC;
+
+-- End of File
+/* =========================================================== */
+
+Insights & Recommendations:
+
+| Area      | Key Insight                             | Recommended Action                 |
+| --------- | --------------------------------------- | ---------------------------------- |
+| Genre     | Action & Comedy dominate rentals        | Add more films, promote top genres |
+| Customers | Few users rent most films               | Reward loyal users                 |
+| Spending  | Revenue concentrated in top 15%         | Personalized offers for others     |
+| Catalog   | Uneven film distribution                | Balance and expand content         |
+| Pricing   | High-price films not always most rented | Apply dynamic pricing              |
+
