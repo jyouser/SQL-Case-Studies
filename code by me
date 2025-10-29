@@ -1,0 +1,74 @@
+#Question 1: What is the most popular movie genre by the total number of rentals? 
+#solution approach:Genre is found in caterory table and rental_id is found in rental table.
+#                  5 tables need to connect category,film_category,film,inventory,rental. 
+#                  There is no all,each,every keywords in question, so i need to go for inner join.
+
+select c.name as genre,count(r.rental_id) as no_of_retals
+from cineflix.category c 
+inner join cineflix.film_category fc on c.category_id=fc.category_id
+inner join cineflix.film f on fc.film_id=f.film_id
+inner join cineflix.inventory i on f.film_id=i.film_id
+inner join cineflix.rental r on i.inventory_id=r.inventory_id
+group by  c.name 
+order by no_of_retals desc
+limit 1; #they asked most popular genre
+
+#More info. like i want to see category_id of genre
+select c.name as genre,count(r.rental_id) as no_of_retals,c.category_id
+from cineflix.category c 
+inner join cineflix.film_category fc on c.category_id=fc.category_id
+inner join cineflix.film f on fc.film_id=f.film_id
+inner join cineflix.inventory i on f.film_id=i.film_id
+inner join cineflix.rental r on i.inventory_id=r.inventory_id
+group by  c.name,c.category_id
+order by no_of_retals desc
+
+#Question 2: Get a list of all customers who have rented more films than the average number of rentals.
+select customer_id,count(rental_id) as cnt_rentals from cineflix.rental 
+group by customer_id
+having cnt_rentals>
+(
+select round(avg(cnt_rentals),2) as avg_rentals from
+(
+select customer_id,count(rental_id) as cnt_rentals from cineflix.rental 
+group by customer_id
+)#26.78
+)
+
+#Question 3: List all customers and the total amount they have spent on rentals, including customers who have never rented a film. 
+
+select c.customer_id,ifnull(round(sum(p.amount),2),0) as total_amount from cineflix.customer c
+left join cineflix.payment p on c.customer_id=p.customer_id
+group by c.customer_id
+order by total_amount
+
+#Question 4: List all film categories along with the number of films in each category, including categories with no films. 
+
+select c.category_id,c.name,t.cnt_films from cineflix.category c
+left join
+(
+select fc.category_id,ifnull(count(fc.film_id),0) as cnt_films from cineflix.film_category fc
+group by fc.category_id
+)t 
+on c.category_id=t.category_id
+order by t.cnt_films
+
+#Question 5: List all films with rental rates higher than the average rental rate. 
+#approach 1:
+select film_id,rental_rate from cineflix.film where rental_rate >
+(
+select round(avg(rental_rate),2) as avg_rental_rate 
+from cineflix.film
+#2.98
+)
+
+#approach-2:
+select f.film_id,f.rental_rate,ifnull(t.avg_rental_rate,0) as avg_rent from cineflix.film f
+left join
+(
+select round(avg(rental_rate),2) as avg_rental_rate 
+from cineflix.film
+#2.98
+)t
+on f.rental_rate>t.avg_rental_rate
+
